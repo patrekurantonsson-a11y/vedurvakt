@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samanburður spáa · Veðurvakt</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#15514E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Veðurvakt">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+</head>
+<body>
+<div class="page">
+
+  <a class="back" id="back-link" href="index.html">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none"
+      stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+      stroke-linejoin="round"/></svg>
+    Til baka
+  </a>
+
+  <header class="place">
+    <h1 id="place-name">Samanburður spáa</h1>
+  </header>
+
+  <div class="top compare">
+    <section class="card spread-card">
+      <h2>Miðgildi allra spáa</h2>
+      <p id="spread-intro">Hleð…</p>
+      <div id="spread-chart"></div>
+    </section>
+
+    <section class="card now-card">
+      <div class="now-head"><h2>Næstu klukkustundir</h2></div>
+      <div class="scrolls"><table class="hours" id="median-table">
+        <thead><tr><th>Tími</th><th>Veður</th><th class="num">Miðgildi</th>
+          <th class="num">Bil</th><th>Vindur</th></tr></thead>
+        <tbody id="median-body"></tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <section class="card panel">
+    <div class="metric-tabs">
+      <button class="metric on" data-metric="t">Hiti °C</button>
+      <button class="metric" data-metric="spd">Vindur m/s</button>
+      <button class="metric" data-metric="precip">Úrkoma mm</button>
+      <button class="metric" data-metric="cloud">Skýjahula %</button>
+    </div>
+    <div class="matrix">
+      <table class="hours">
+        <thead><tr id="matrix-head"></tr></thead>
+        <tbody id="matrix-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card panel" style="margin-top:18px">
+    <div class="srclist" id="srclist"></div>
+  </section>
+
+  <footer class="foot" id="foot"></footer>
+</div>
+<script src="common.js"></script>
+<script src="compare.js"></script>
+<script>
+  // Registered late and quietly: if it fails, the site simply works as before.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () =>
+      navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>

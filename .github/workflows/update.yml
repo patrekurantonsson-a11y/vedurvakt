@@ -1,0 +1,67 @@
+name: Update forecast
+
+on:
+  schedule:
+    # Every 20 minutes. GitHub often runs scheduled jobs a few minutes late,
+    # which is fine — the page shows how old the observations are.
+    - cron: "*/20 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The observation history lives in the Actions cache, not in the repo, so
+      # the repository never fills up with data commits. Verification and bias
+      # correction need this history to work.
+      - name: Restore observation history
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.vedurvakt
+          key: vedurvakt-db-${{ github.run_id }}
+          restore-keys: vedurvakt-db-
+
+      # Only used for the link-preview card; the forecast itself needs no packages.
+      - name: Install Pillow (for the link preview image)
+        run: pip install --quiet pillow
+
+      - name: Collect observations and build forecast
+        run: python3 vedurvakt.py build --out site
+
+      - name: Save observation history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.vedurvakt
+          key: vedurvakt-db-${{ github.run_id }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
