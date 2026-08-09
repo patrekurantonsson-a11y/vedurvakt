@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veðurvakt</title>
+<meta name="description" content="Sjálfvirk veðurspá byggð á mæligögnum Vegagerðarinnar.">
+<!--og-->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Veðurvakt">
+<meta property="og:locale" content="is_IS">
+<meta property="og:title" content="Veðrið í Þorlákshöfn">
+<meta property="og:description" content="Sjálfvirk veðurspá úr mæligögnum Vegagerðarinnar. Uppfærð á tuttugu mínútna fresti.">
+<meta property="og:url" content="https://vedurvakt.is/">
+<meta property="og:image" content="https://vedurvakt.is/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<!--/og-->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#15514E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Veðurvakt">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+</head>
+<body>
+<div class="page">
+
+  <header class="place">
+    <h1 id="place-name">Hleð…</h1>
+    <button id="back-home" class="back-home hidden" type="button">←</button>
+
+    <a class="ensemble-chip" href="samanburdur.html" id="ensemble-chip">
+      <span class="chip-label">Miðgildi spáa</span>
+      <span class="chip-main"><span id="chip-temp">—</span><span id="chip-wind"></span></span>
+      <span class="chip-sub" id="chip-sub">hleð…</span>
+      <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </header>
+
+  <div class="top">
+    <section class="card map-card">
+      <div class="map-head">
+        <span id="map-title">Veðurkort</span>
+        <span id="map-sub" class="muted"></span>
+      </div>
+      <div class="layers" role="group" aria-label="Kortalög">
+        <button class="layer-btn" data-layer="t" type="button">Hiti</button>
+        <button class="layer-btn" data-layer="spd" type="button">Vindur</button>
+        <button class="layer-btn" data-layer="precip" type="button">Úrkoma</button>
+      </div>
+      <div id="map"></div>
+      <div id="map-legend-scale" class="lg"></div>
+      <p class="legend" id="map-legend">Mælingar frá sjálfvirkum stöðvum Vegagerðarinnar.</p>
+    </section>
+
+    <section class="card now-card">
+      <div class="now-head">
+        <h2 id="now-title">Veðrið núna</h2>
+        <span id="now-time" class="now-time">—</span>
+      </div>
+      <div class="now-body">
+        <div class="now-icon">
+          <div id="now-symbol"></div>
+          <span id="now-word" class="muted">—</span>
+        </div>
+        <dl id="now-list"></dl>
+      </div>
+      <div class="notice">
+        <h3>Sjálfvirk spá</h3>
+        <p id="notice-text">Spáin er reiknuð sjálfvirkt út frá mæligögnum og er ekki yfirfarin.
+          Opinberar spár og viðvaranir eru á vedur.is.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="card scrub-card" id="scrub-card">
+    <div class="scrub-head">
+      <span id="scrub-when">Hleð…</span>
+      <button id="scrub-now" class="scrub-btn on" type="button">Núna</button>
+    </div>
+    <div class="scrub-days" id="scrub-days"></div>
+    <input type="range" id="scrub" min="0" max="0" step="1" value="0"
+      aria-label="Veldu klukkustund í spánni">
+    <div class="scrub-ticks" id="scrub-ticks"></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="today" role="tab">Í dag</button>
+    <button class="tab" data-tab="days" role="tab">Næstu dagar</button>
+    <div class="tab-spacer"></div>
+    <button class="tab ghost" data-tab="why" role="tab">Greining</button>
+    <button class="tab ghost" data-tab="score" role="tab">Nákvæmni</button>
+  </nav>
+
+  <section class="card panel" id="panel-today">
+    <table class="hours">
+      <thead><tr>
+        <th>Tími</th><th>Veður</th><th class="num">Hiti</th><th>Vindur</th>
+        <th class="num">Úrkoma / klst</th><th class="num">Rakastig</th>
+      </tr></thead>
+      <tbody id="hours-body"></tbody>
+    </table>
+  </section>
+
+  <section class="card panel hidden" id="panel-days">
+    <div id="days-body" class="days"></div>
+  </section>
+
+  <section class="card panel hidden" id="panel-why">
+    <ul id="why-body" class="why"></ul>
+    <div id="why-grid" class="why-grid"></div>
+  </section>
+
+  <section class="card panel hidden" id="panel-score">
+    <p class="muted" id="score-intro"></p>
+    <table class="hours score">
+      <thead><tr><th>Fyrirvari</th><th class="num">Hitaskekkja</th>
+        <th class="num">Vindskekkja</th><th class="num">Fjöldi</th></tr></thead>
+      <tbody id="score-body"></tbody>
+    </table>
+  </section>
+
+  <footer id="foot" class="foot"></footer>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="common.js"></script>
+<script src="app.js"></script>
+<script>
+  // Registered late and quietly: if it fails, the site simply works as before.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () =>
+      navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>

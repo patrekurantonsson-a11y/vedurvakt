@@ -1,0 +1,84 @@
+name: Update forecast
+
+on:
+  schedule:
+    # Every 20 minutes. GitHub often runs scheduled jobs a few minutes late,
+    # which is fine — the page shows how old the observations are.
+    - cron: "*/20 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.check.outputs.ok }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The observation history lives in the Actions cache, not in the repo, so
+      # the repository never fills up with data commits. Verification and bias
+      # correction need this history to work.
+      - name: Restore observation history
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.vedurvakt
+          key: vedurvakt-db-${{ github.run_id }}
+          restore-keys: vedurvakt-db-
+
+      # Only used for the link-preview card; the forecast itself needs no packages.
+      - name: Install Pillow (for the link preview image)
+        run: pip install --quiet pillow
+
+      - name: Collect observations and build forecast
+        run: python3 vedurvakt.py build --out site
+
+      # Vegagerðin's feed sometimes answers with nothing. When that happens
+      # there is no forecast to publish, so skip the deploy and leave the site
+      # that is already up in place rather than replacing it with an empty one.
+      - name: Is there a forecast to publish?
+        id: check
+        run: |
+          if [ -f site/data/latest.json ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Engin gögn bárust — sleppi birtingu í þetta sinn."
+          fi
+
+      - name: Save observation history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.vedurvakt
+          key: vedurvakt-db-${{ github.run_id }}
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.ok == 'true'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
