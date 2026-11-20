@@ -470,7 +470,10 @@ function renderMap(d) {
     MAP.getPane("relief").style.pointerEvents = "none";
     MAP.getPane("labels").style.pointerEvents = "none";
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+    // CARTO basemaps need a key since Aug 2026 (free tier, restrict it to vedurvakt.is).
+    const CARTO_KEY = "cb1_5d0f_1_66215e5b1c0b6a08ddf310d6";
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}{r}.png?key=" + CARTO_KEY, {
       subdomains: "abcd", maxZoom: 18, className: "warm-tiles",
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO, hæðarskygging Esri',
     }).addTo(MAP);
@@ -478,7 +481,7 @@ function renderMap(d) {
                 "World_Hillshade/MapServer/tile/{z}/{y}/{x}", {
       pane: "relief", maxZoom: 16, opacity: 0.5, className: "relief-tiles",
     }).addTo(MAP);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/light_only_labels/{z}/{x}/{y}{r}.png?key=" + CARTO_KEY, {
       subdomains: "abcd", maxZoom: 18, pane: "labels",
     }).addTo(MAP);
     MARKERS = L.layerGroup().addTo(MAP);

@@ -13,6 +13,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write
 
 concurrency:
   group: pages
@@ -71,6 +72,22 @@ jobs:
         if: steps.check.outputs.ok == 'true'
         with:
           path: site
+
+  # GitHub switches off scheduled workflows after 60 days without a commit.
+  # Re-enabling the workflow through the API resets that timer, so do it once
+  # a day (scheduled runs during the 00 UTC hour; a few extra calls are harmless).
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep the schedule alive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%H)" = "00" ]; then
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/update.yml/enable"
+            echo "Schedule kept alive."
+          fi
 
   deploy:
     needs: build
